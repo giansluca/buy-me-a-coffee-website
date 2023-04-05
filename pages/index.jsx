@@ -1,6 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/no-unescaped-entities */
-/* eslint-disable no-undef */
 
 import Head from "next/head";
 import { useEffect, useState } from "react";
@@ -239,7 +237,7 @@ export default function Home() {
                             key={idx}
                             style={{ border: "2px solid", borderRadius: "5px", padding: "5px", margin: "5px" }}
                         >
-                            <p style={{ fontWeight: "bold" }}>"{memo.message}"</p>
+                            <p style={{ fontWeight: "bold" }}>&quot;{memo.message}&quot;</p>
                             <p>
                                 From: {memo.name} at: {formatDate(memo.timestamp)}
                             </p>
