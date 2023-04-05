@@ -1,0 +1,12 @@
+{
+    "extends": ["eslint:recommended", "plugin:react/recommended", "plugin:react/jsx-runtime", "next"],
+    "parserOptions": {
+        "ecmaVersion": 2017,
+        "sourceType": "module"
+    },
+    "env": {
+        "es6": true,
+        "node": true,
+        "jest": true
+    }
+}
