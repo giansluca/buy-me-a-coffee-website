@@ -180,7 +180,7 @@ export default function Home() {
                 buyMeACoffee.off("NewMemo", onNewMemo);
             }
         };
-    }, [currentAccount]);
+    }, []);
 
     return (
         <div className={styles.container}>
@@ -191,7 +191,7 @@ export default function Home() {
             </Head>
 
             <main className={styles.main}>
-                <h1 className={styles.title}>Buy Gians a Coffee!</h1>
+                <h1 className={styles.title}>Buy Gians a coffee! :-D</h1>
 
                 {currentAccount ? (
                     <div>
