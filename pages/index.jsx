@@ -180,7 +180,7 @@ export default function Home() {
                 buyMeACoffee.off("NewMemo", onNewMemo);
             }
         };
-    }, []);
+    }, [currentAccount]);
 
     return (
         <div className={styles.container}>
