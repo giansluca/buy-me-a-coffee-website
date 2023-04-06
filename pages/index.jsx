@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { ethers, BrowserProvider, Contract } from "ethers";
