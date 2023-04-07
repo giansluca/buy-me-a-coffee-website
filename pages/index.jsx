@@ -69,7 +69,6 @@ export default function Home() {
             if (!(await isWalletConnected())) return;
 
             const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-
             if (accounts.length > 0) {
                 const account = accounts[0];
                 setCurrentAccount(account);
@@ -102,7 +101,7 @@ export default function Home() {
 
                 await coffeeTxn.wait();
 
-                // console.log("mined ", coffeeTxn.hash);
+                console.log("mined ", coffeeTxn.hash);
                 console.log("coffee purchased!");
 
                 // Clear the form fields.
@@ -123,7 +122,7 @@ export default function Home() {
                 const signer = await provider.getSigner();
                 const buyMeACoffee = new Contract(contractAddress, contractABI, signer);
 
-                console.log("fetching memos from the blockchain..");
+                console.log("fetching memos from the blockchain...");
                 const memos = await buyMeACoffee.getMemos();
                 console.log("fetched!");
                 setMemos(memos);
@@ -161,12 +160,13 @@ export default function Home() {
                 const provider = new BrowserProvider(ethereum);
                 const signer = await provider.getSigner();
                 buyMeACoffee = new Contract(contractAddress, contractABI, signer);
-                buyMeACoffee.on("NewMemo", onNewMemo);
+
+                buyMeACoffee.on("NewMemo", function (from, timestamp, name, message) {
+                    onNewMemo(from, timestamp, name, message);
+                });
 
                 ethereum.on("accountsChanged", async function (accounts) {
                     if (accounts.length == 0) return;
-
-                    console.log("setting current account to: ", accounts[0]);
                     await setUpWallet();
                 });
             }
