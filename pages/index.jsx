@@ -3,7 +3,7 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import { ethers, BrowserProvider, Contract } from "ethers";
 import styles from "../styles/Home.module.css";
-import abi from "../utils/BuyMeACoffee.json";
+import abi from "../utils/abi/BuyMeACoffee.json";
 
 export default function Home() {
     // Contract Address & ABI
