@@ -58,7 +58,7 @@ export default function Home() {
         }
     };
 
-    const setUpWallet = async () => {
+    const connectWallet = async () => {
         try {
             const { ethereum } = window;
             if (!ethereum) {
@@ -66,19 +66,23 @@ export default function Home() {
                 return;
             }
 
-            if (!(await isWalletConnected())) return;
-
             const accounts = await ethereum.request({ method: "eth_requestAccounts" });
             if (accounts.length > 0) {
                 const account = accounts[0];
-                setCurrentAccount(account);
                 console.log("wallet connected to: " + account);
+                return account;
             } else {
                 console.log("account size cannot be empty");
             }
         } catch (error) {
             console.log(error);
         }
+    };
+
+    const setUpWallet = async () => {
+        const account = await connectWallet();
+        setCurrentAccount(account);
+        await getMemos();
     };
 
     const buyCoffee = async () => {
@@ -152,24 +156,21 @@ export default function Home() {
 
         const init = async () => {
             if (!(await isWalletConnected())) return;
-            await getMemos();
+            await setUpWallet();
 
-            // Listen for new memo events.
             const { ethereum } = window;
-            if (ethereum) {
-                const provider = new BrowserProvider(ethereum);
-                const signer = await provider.getSigner();
-                buyMeACoffee = new Contract(contractAddress, contractABI, signer);
+            const provider = new BrowserProvider(ethereum);
+            const signer = await provider.getSigner();
+            buyMeACoffee = new Contract(contractAddress, contractABI, signer);
 
-                buyMeACoffee.on("NewMemo", function (from, timestamp, name, message) {
-                    onNewMemo(from, timestamp, name, message);
-                });
+            buyMeACoffee.on("NewMemo", function (from, timestamp, name, message) {
+                onNewMemo(from, timestamp, name, message);
+            });
 
-                ethereum.on("accountsChanged", async function (accounts) {
-                    if (accounts.length == 0) return;
-                    await setUpWallet();
-                });
-            }
+            ethereum.on("accountsChanged", async function (accounts) {
+                if (accounts.length == 0) return;
+                await setUpWallet();
+            });
         };
 
         init();
