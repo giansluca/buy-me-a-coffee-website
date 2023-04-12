@@ -39,7 +39,8 @@ export default function Home() {
 
     const onAccountChange = async (accounts) => {
         if (accounts.length == 0) return;
-        await connectWallet();
+        const account = await connectWallet();
+        setCurrentAccount(account);
     };
 
     const formatDate = (timestamp) => {
@@ -86,9 +87,8 @@ export default function Home() {
             const accounts = await ethereum.request({ method: "eth_requestAccounts" });
             if (accounts.length > 0) {
                 const account = accounts[0];
-                setCurrentAccount(account);
-
                 console.log("wallet connected to: " + account);
+                return account;
             } else {
                 console.log("account size cannot be empty");
             }
@@ -98,7 +98,8 @@ export default function Home() {
     };
 
     const setUp = async () => {
-        await connectWallet();
+        const account = await connectWallet();
+        setCurrentAccount(account);
 
         if (!(await isWalletConnected())) return;
 
