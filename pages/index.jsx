@@ -24,6 +24,24 @@ export default function Home() {
         setMessage(event.target.value);
     };
 
+    const onNewMemo = (from, timestamp, name, message) => {
+        console.log("Memo received: ", from, timestamp, name, message);
+        setMemos((prevState) => [
+            ...prevState,
+            {
+                from,
+                timestamp,
+                name,
+                message,
+            },
+        ]);
+    };
+
+    const onAccountChange = async (accounts) => {
+        if (accounts.length == 0) return;
+        await connectWallet();
+    };
+
     const formatDate = (timestamp) => {
         return new Intl.DateTimeFormat("en-GB", {
             year: "numeric",
@@ -35,7 +53,6 @@ export default function Home() {
         }).format(1000 * timestamp.toString());
     };
 
-    // Wallet connection logic
     const isWalletConnected = async () => {
         try {
             const { ethereum } = window;
@@ -69,8 +86,9 @@ export default function Home() {
             const accounts = await ethereum.request({ method: "eth_requestAccounts" });
             if (accounts.length > 0) {
                 const account = accounts[0];
+                setCurrentAccount(account);
+
                 console.log("wallet connected to: " + account);
-                return account;
             } else {
                 console.log("account size cannot be empty");
             }
@@ -79,76 +97,82 @@ export default function Home() {
         }
     };
 
-    const setUpWallet = async () => {
-        const account = await connectWallet();
-        setCurrentAccount(account);
+    const setUp = async () => {
+        await connectWallet();
+
+        if (!(await isWalletConnected())) return;
+
+        const { ethereum } = window;
+        const provider = new BrowserProvider(ethereum);
+        const signer = await provider.getSigner();
+        const buyMeACoffee = new Contract(contractAddress, contractABI, signer);
+
+        buyMeACoffee.on("NewMemo", function (from, timestamp, name, message) {
+            onNewMemo(from, timestamp, name, message);
+        });
+
+        ethereum.on("accountsChanged", async function (accounts) {
+            onAccountChange(accounts);
+        });
+
         await getMemos();
+
+        return buyMeACoffee;
     };
 
     const buyCoffee = async () => {
         try {
             const { ethereum } = window;
-
-            if (ethereum) {
-                const provider = new BrowserProvider(ethereum);
-                const signer = await provider.getSigner();
-                const buyMeACoffee = new Contract(contractAddress, contractABI, signer);
-
-                console.log("buying coffee..");
-
-                const tip = { value: ethers.parseEther("0.001") };
-                const coffeeTxn = await buyMeACoffee.buyCoffee(
-                    name ? name : "anon",
-                    message ? message : "Enjoy your coffee!",
-                    tip
-                );
-
-                await coffeeTxn.wait();
-
-                console.log("mined ", coffeeTxn.hash);
-                console.log("coffee purchased!");
-
-                // Clear the form fields.
-                setName("");
-                setMessage("");
+            if (!ethereum) {
+                console.log("Metamask is not connected");
+                return;
             }
+
+            const provider = new BrowserProvider(ethereum);
+            const signer = await provider.getSigner();
+            const buyMeACoffee = new Contract(contractAddress, contractABI, signer);
+
+            console.log("buying coffee...");
+
+            const tip = { value: ethers.parseEther("0.001") };
+            const coffeeTxn = await buyMeACoffee.buyCoffee(
+                name ? name : "anon",
+                message ? message : "Enjoy your coffee!",
+                tip
+            );
+
+            await coffeeTxn.wait();
+
+            console.log("mined ", coffeeTxn.hash);
+            console.log("coffee purchased!");
+
+            // Clear the form fields.
+            setName("");
+            setMessage("");
         } catch (error) {
             console.log(error);
         }
     };
 
-    // Function to fetch all memos stored on-chain.
     const getMemos = async () => {
         try {
             const { ethereum } = window;
-            if (ethereum) {
-                const provider = new BrowserProvider(ethereum);
-                const signer = await provider.getSigner();
-                const buyMeACoffee = new Contract(contractAddress, contractABI, signer);
-
-                console.log("fetching memos from the blockchain...");
-                const memos = await buyMeACoffee.getMemos();
-                console.log("fetched!");
-                setMemos(memos);
-            } else {
+            if (!ethereum) {
                 console.log("Metamask is not connected");
+                return;
             }
+
+            const provider = new BrowserProvider(ethereum);
+            const signer = await provider.getSigner();
+            const buyMeACoffee = new Contract(contractAddress, contractABI, signer);
+
+            console.log("fetching memos from the blockchain...");
+            const memos = await buyMeACoffee.getMemos();
+            console.log("fetched!");
+            setMemos(memos);
         } catch (error) {
             console.log(error);
         }
-    };
-
-    const onNewMemo = (from, timestamp, name, message) => {
-        console.log("Memo received: ", from, timestamp, name, message);
-        setMemos((prevState) => [
-            ...prevState,
-            {
-                from,
-                timestamp,
-                name,
-                message,
-            },
-        ]);
     };
 
     useEffect(() => {
@@ -156,28 +180,18 @@ export default function Home() {
 
         const init = async () => {
             if (!(await isWalletConnected())) return;
-            await setUpWallet();
-
-            const { ethereum } = window;
-            const provider = new BrowserProvider(ethereum);
-            const signer = await provider.getSigner();
-            buyMeACoffee = new Contract(contractAddress, contractABI, signer);
-
-            buyMeACoffee.on("NewMemo", function (from, timestamp, name, message) {
-                onNewMemo(from, timestamp, name, message);
-            });
-
-            ethereum.on("accountsChanged", async function (accounts) {
-                if (accounts.length == 0) return;
-                await setUpWallet();
-            });
+            buyMeACoffee = await setUp();
         };
 
         init();
 
         return () => {
+            console.log("unload");
             if (buyMeACoffee) {
                 buyMeACoffee.off("NewMemo", onNewMemo);
+            }
+            if (window.ethereum) {
+                window.ethereum.removeListener("accountsChanged", onAccountChange);
             }
         };
     }, []);
@@ -224,7 +238,7 @@ export default function Home() {
                         </form>
                     </div>
                 ) : (
-                    <button onClick={setUpWallet}> Connect your wallet </button>
+                    <button onClick={setUp}> Connect your wallet </button>
                 )}
             </main>
 
