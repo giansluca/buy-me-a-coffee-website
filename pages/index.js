@@ -139,7 +139,7 @@ export default function Home() {
             const coffeeTxn = await buyMeACoffee.buyCoffee(
                 name ? name : "anon",
                 message ? message : "Enjoy your coffee!",
-                tip
+                tip,
             );
 
             await coffeeTxn.wait();
